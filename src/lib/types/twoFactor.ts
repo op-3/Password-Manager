@@ -3,8 +3,8 @@ export interface TwoFactorAccount {
   name: string;
   issuer: string;
   secret: string;
-  type: "TOTP" | "HOTP" | "STEAM";
-  algorithm: "SHA1" | "SHA256" | "SHA512";
+  type: string; // سنستخدم هذا في الجانب الأمامي
+  algorithm: string;
   digits: number;
   period: number;
 }

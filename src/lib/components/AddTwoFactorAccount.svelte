@@ -9,6 +9,7 @@
   
     const dispatch = createEventDispatcher();
   
+    let addMethod: 'manual' | 'qr' | 'uri' = 'manual';
     let input = '';
     let accountName = '';
     let issuer = '';
@@ -173,46 +174,33 @@
   <div class="card bg-base-200 shadow-xl p-4">
     <h3 class="text-xl font-bold mb-4">Add New 2FA Account</h3>
     
+    <div class="tabs tabs-boxed mb-4">
+      <button
+        class="tab"
+        class:tab-active={addMethod === 'manual'}
+        on:click={() => addMethod = 'manual'}
+      >
+        Manual Entry
+      </button>
+      <button
+        class="tab"
+        class:tab-active={addMethod === 'qr'}
+        on:click={() => addMethod = 'qr'}
+      >
+        QR Code
+      </button>
+      <button
+        class="tab"
+        class:tab-active={addMethod === 'uri'}
+        on:click={() => addMethod = 'uri'}
+      >
+        URI
+      </button>
+    </div>
+    
+  
     <form on:submit|preventDefault={handleSubmit}>
-      <input
-        type="text"
-        bind:value={input}
-        on:input={handleInput}
-        placeholder="Enter secret key or otpauth:// URL"
-        class="input input-bordered w-full mb-4"
-      />
-  
-      <div class="mb-4">
-        <label for="qr-image" class="block mb-2">Import QR Code Image</label>
-        <input
-          id="qr-image"
-          type="file"
-          accept="image/*"
-          on:change={handleQrImageImport}
-          class="file-input file-input-bordered w-full"
-        />
-        {#if qrProcessingError}
-          <p class="text-error mt-2">{qrProcessingError}</p>
-        {/if}
-      </div>
-  
-      {#if importedAccounts.length > 0}
-        <div class="mb-4">
-          <h4 class="text-lg font-semibold mb-2">Imported Accounts</h4>
-          {#each importedAccounts as account, index}
-            <div class="p-2 bg-base-300 rounded mb-2 flex items-center">
-              <input type="checkbox" bind:checked={account.selected} class="checkbox mr-2">
-              <div>
-                <p><strong>Name:</strong> {account.name}</p>
-                <p><strong>Issuer:</strong> {account.issuer}</p>
-              </div>
-            </div>
-          {/each}
-          <button type="button" class="btn btn-primary w-full" on:click={addSelectedAccounts}>
-            Add Selected Accounts
-          </button>
-        </div>
-      {:else if secret}
+      {#if addMethod === 'manual'}
         <input
           type="text"
           bind:value={accountName}
@@ -225,6 +213,13 @@
           bind:value={issuer}
           placeholder="Issuer (optional)"
           class="input input-bordered w-full mb-2"
+        />
+        <input
+          type="text"
+          bind:value={secret}
+          placeholder="Secret Key"
+          class="input input-bordered w-full mb-2"
+          required
         />
         <select bind:value={type} class="select select-bordered w-full mb-2">
           <option value="TOTP">TOTP</option>
@@ -252,6 +247,48 @@
           min="30"
           step="30"
         />
+        <button type="submit" class="btn btn-primary w-full">Add Account</button>
+      {:else if addMethod === 'qr'}
+        <div class="mb-4">
+          <label for="qr-image" class="block mb-2">Import QR Code Image</label>
+          <input
+            id="qr-image"
+            type="file"
+            accept="image/*"
+            on:change={handleQrImageImport}
+            class="file-input file-input-bordered w-full"
+          />
+          {#if qrProcessingError}
+            <p class="text-error mt-2">{qrProcessingError}</p>
+          {/if}
+        </div>
+      {:else if addMethod === 'uri'}
+        <input
+          type="text"
+          bind:value={input}
+          on:input={handleInput}
+          placeholder="Enter otpauth:// URL"
+          class="input input-bordered w-full mb-4"
+        />
+      {/if}
+  
+      {#if importedAccounts.length > 0}
+        <div class="mb-4">
+          <h4 class="text-lg font-semibold mb-2">Imported Accounts</h4>
+          {#each importedAccounts as account, index}
+            <div class="p-2 bg-base-300 rounded mb-2 flex items-center">
+              <input type="checkbox" bind:checked={account.selected} class="checkbox mr-2">
+              <div>
+                <p><strong>Name:</strong> {account.name}</p>
+                <p><strong>Issuer:</strong> {account.issuer}</p>
+              </div>
+            </div>
+          {/each}
+          <button type="button" class="btn btn-primary w-full" on:click={addSelectedAccounts}>
+            Add Selected Accounts
+          </button>
+        </div>
+      {:else if addMethod !== 'manual' && secret}
         <button type="submit" class="btn btn-primary w-full">Add Account</button>
       {/if}
     </form>

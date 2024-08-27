@@ -2,6 +2,8 @@ import { writable, get } from "svelte/store";
 import type { TwoFactorAccount } from "$lib/types/twoFactor";
 import { invoke } from "@tauri-apps/api/tauri";
 
+const STORAGE_KEY = "two_factor_accounts";
+
 function createTwoFactorStore() {
   const { subscribe, set, update } = writable<TwoFactorAccount[]>([]);
 
@@ -11,6 +13,12 @@ function createTwoFactorStore() {
       update((accounts) => [
         ...accounts,
         { ...account, id: crypto.randomUUID() },
+      ]);
+    },
+    addMultipleAccounts: (accounts: Omit<TwoFactorAccount, "id">[]) => {
+      update((existingAccounts) => [
+        ...existingAccounts,
+        ...accounts.map((account) => ({ ...account, id: crypto.randomUUID() })),
       ]);
     },
     removeAccount: (id: string) => {
@@ -23,27 +31,26 @@ function createTwoFactorStore() {
     },
     load: async () => {
       try {
-        const accounts = await invoke<TwoFactorAccount[]>(
+        const loadedAccounts = await invoke<TwoFactorAccount[]>(
           "load_two_factor_accounts"
         );
-        set(accounts);
+        set(loadedAccounts);
       } catch (error) {
         console.error("Failed to load 2FA accounts:", error);
       }
     },
     save: async () => {
       try {
-        const accounts = get(twoFactorStore);
-        await invoke("save_two_factor_accounts", { accounts });
+        const data = get(twoFactorStore);
+        // تحويل 'type' إلى 'type_' قبل الإرسال
+        const formattedData = data.map((account) => ({
+          ...account,
+          type_: account.type,
+        }));
+        await invoke("save_two_factor_accounts", { accounts: formattedData });
       } catch (error) {
         console.error("Failed to save 2FA accounts:", error);
       }
-    },
-    addMultipleAccounts: (accounts: Omit<TwoFactorAccount, "id">[]) => {
-      update((existingAccounts) => [
-        ...existingAccounts,
-        ...accounts.map((account) => ({ ...account, id: crypto.randomUUID() })),
-      ]);
     },
   };
 }

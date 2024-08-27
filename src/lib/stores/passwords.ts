@@ -1,6 +1,8 @@
 import { writable, get, derived } from "svelte/store";
 import type { PasswordEntry } from "$lib/types";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/tauri";
+
+const STORAGE_KEY = "passwords";
 
 function createPasswordStore() {
   const { subscribe, set, update } = writable<PasswordEntry[]>([]);
@@ -38,7 +40,12 @@ function createPasswordStore() {
     save: async () => {
       try {
         const data = get(passwords);
-        await invoke("save_passwords", { passwords: data });
+        // تحويل lastUpdated إلى نص قبل الإرسال
+        const formattedData = data.map((entry) => ({
+          ...entry,
+          lastUpdated: entry.lastUpdated.toString(),
+        }));
+        await invoke("save_passwords", { passwords: formattedData });
       } catch (error) {
         console.error("Failed to save passwords:", error);
       }
